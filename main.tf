@@ -30,5 +30,5 @@ module "lambda" {
 resource "aws_sns_topic_subscription" "sns_subscription" {
   topic_arn = var.sns_topic_arn
   protocol  = "lambda"
-  endpoint  = module.lambda.lambda-arn
+  endpoint  = module.lambda.this_lambda_function_arn
 }
