@@ -1,35 +1,35 @@
-data "aws_region" "current" {}
-data "aws_caller_identity" "identity" {}
 
 module "lambda" {
-  source                       = "terraform-aws-modules/lambda/aws"
-  function_name                = var.function_name
-  handler                      = var.handler
-  runtime                      = var.runtime
-  publish                      = false
-  layers                       = var.layers
-  timeout                      = 30
-  create_async_event_config    = true
-  maximum_event_age_in_seconds = 120
-  maximum_retry_attempts       = 0
-  environment_variables        = var.env_vars
-  attach_policies              = true
-  policies                     = var.attached_policies
-
-  #todo check this out
-  create_package         = false
-  local_existing_package = var.file_name
-
-  allowed_triggers = {
-    SnsTrigger = {
-      service = "sns"
-      arn     = var.sns_topic_arn
-    }
-  }
+  source                         = "vladcar/serverless-common-basic-lambda/aws"
+  source_path                    = var.source_path
+  function_name                  = var.function_name
+  handler                        = var.handler
+  memory_size                    = var.memory_size
+  description                    = var.description
+  reserved_concurrent_executions = var.reserved_concurrent_executions
+  timeout                        = var.timeout
+  create_async_invoke_config     = var.create_async_invoke_config
+  maximum_event_age_in_seconds   = var.maximum_event_age_in_seconds
+  maximum_retry_attempts         = var.maximum_retry_attempts
+  destination_on_failure         = var.destination_on_failure
+  destination_on_success         = var.destination_on_success
+  runtime                        = var.runtime
+  layers                         = var.layers
+  env_vars                       = var.env_vars
+  tags                           = var.tags
+  attached_policies              = var.attached_policies
 }
 
-resource "aws_sns_topic_subscription" "sns_subscription" {
+resource "aws_lambda_permission" "sns_lambda" {
+  statement_id  = "AllowExecutionFromSNS"
+  action        = "lambda:InvokeFunction"
+  function_name = var.function_name
+  principal     = "sns.amazonaws.com"
+  source_arn    = var.sns_topic_arn
+}
+
+resource "aws_sns_topic_subscription" "new_prospect_approval_subscription" {
   topic_arn = var.sns_topic_arn
   protocol  = "lambda"
-  endpoint  = module.lambda.this_lambda_function_arn
+  endpoint  = module.lambda.lambda_arn
 }
